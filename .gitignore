@@ -1,0 +1,6 @@
+**/compile_commands.json
+prog1_mandelbrot_threads/mandelbrot
+prog1_mandelbrot_threads/*.ppm
+**/.cache/**
+**/.vscode/**
+prog1_mandelbrot_threads/objs/**
