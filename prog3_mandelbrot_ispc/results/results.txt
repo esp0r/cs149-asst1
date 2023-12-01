@@ -1,0 +1,36 @@
+remark: x4 -- ispc gang size (per core)
+view 1
+--target=avx512skx-x4
+[mandelbrot serial]:            [274.236] ms
+Wrote image file mandelbrot-serial.ppm
+[mandelbrot ispc]:              [95.110] ms
+Wrote image file mandelbrot-ispc.ppm
+                                (2.88x speedup from ISPC)
+
+--target=avx512skx-x8
+[mandelbrot serial]:            [274.233] ms
+Wrote image file mandelbrot-serial.ppm
+[mandelbrot ispc]:              [50.462] ms
+Wrote image file mandelbrot-ispc.ppm
+                                (5.43x speedup from ISPC)
+
+--target=avx512skx-x16
+[mandelbrot serial]:            [274.237] ms
+Wrote image file mandelbrot-serial.ppm
+[mandelbrot ispc]:              [27.722] ms
+Wrote image file mandelbrot-ispc.ppm
+                                (9.89x speedup from ISPC)
+
+--target=avx512skx-x32
+[mandelbrot serial]:            [274.328] ms
+Wrote image file mandelbrot-serial.ppm
+[mandelbrot ispc]:              [21.716] ms
+Wrote image file mandelbrot-ispc.ppm
+                                (12.63x speedup from ISPC)   
+
+--target=avx512skx-x64
+[mandelbrot serial]:            [274.232] ms
+Wrote image file mandelbrot-serial.ppm
+[mandelbrot ispc]:              [17.281] ms
+Wrote image file mandelbrot-ispc.ppm
+                                (15.87x speedup from ISPC)                             
