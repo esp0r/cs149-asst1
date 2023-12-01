@@ -4,3 +4,5 @@ prog1_mandelbrot_threads/*.ppm
 **/.cache/**
 **/.vscode/**
 prog1_mandelbrot_threads/objs/**
+prog2_vecintrin/myexp
+prog2_vecintrin/*.o

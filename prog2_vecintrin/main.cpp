@@ -249,7 +249,85 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
   // Your solution should work for any value of
   // N and VECTOR_WIDTH, not just when VECTOR_WIDTH divides N
   //
+
+  // // Before the SIMD operations, sort the indices according to the exponents
+  // std::vector<int> indices(N);
+  // for (int i = 0; i < N; ++i) {
+  //   indices[i] = i;
+  // }
+  // std::sort(indices.begin(), indices.end(), [&exponents](int i1, int i2) {
+  //   return exponents[i1] > exponents[i2];
+  // });
+  // // Reorder the values and exponents according to the sorted indices
+  // float* sortedValues = new float[N];
+  // int* sortedExponents = new int[N];
+
+  // for (int i = 0; i < N; ++i) {
+  //     sortedValues[i] = values[indices[i]];
+  //     sortedExponents[i] = exponents[indices[i]];
+  // }
+
   
+  
+  __cs149_vec_float x;
+  __cs149_vec_int y;
+  __cs149_vec_int count;
+  __cs149_vec_float result;
+  __cs149_vec_float float_zero = _cs149_vset_float(0.f);
+  __cs149_vec_int int_zero = _cs149_vset_int(0);
+  __cs149_vec_int int_one = _cs149_vset_int(1);
+  __cs149_vec_float max = _cs149_vset_float(9.999999f);
+  __cs149_mask maskAll, maskIsZero, maskIsNotZero, maskIsPositive, maskMax;
+
+  for (int i=0; i+VECTOR_WIDTH<=N; i+=VECTOR_WIDTH){
+    maskAll = _cs149_init_ones();
+
+    _cs149_vload_float(x, values+i, maskAll);
+    _cs149_vload_int(y, exponents+i, maskAll);
+
+    //if (y == 0)
+    maskIsZero = _cs149_init_ones(0);
+    _cs149_veq_int(maskIsZero, y, int_zero, maskAll);
+    _cs149_vset_float(result, 1.f, maskIsZero);
+
+    //else
+    maskIsNotZero = _cs149_mask_not(maskIsZero);
+    //float result = x;
+    _cs149_vmove_float(result, x, maskIsNotZero);
+    //int count = y - 1;
+    _cs149_vsub_int(count, y, int_one, maskIsNotZero);
+    
+    //while (count > 0)
+    maskIsPositive = _cs149_init_ones(0);
+    _cs149_vgt_int(maskIsPositive, count, int_zero, maskIsNotZero);
+    int cntbits = _cs149_cntbits(maskIsPositive);
+    while (cntbits > 0) {
+      //result *= x;
+      _cs149_vmult_float(result, result, x, maskIsPositive);
+      //count--;
+      _cs149_vsub_int(count, count, int_one, maskIsPositive);
+      _cs149_vgt_int(maskIsPositive, count, int_zero, maskIsNotZero);
+      cntbits = _cs149_cntbits(maskIsPositive);
+    }
+    //if (result > 9.999999f)
+    maskMax = _cs149_init_ones(0);
+    _cs149_vgt_float(maskMax, result, max, maskIsNotZero);
+    _cs149_vset_float(result, 9.999999f, maskMax);
+
+    //output[i] = result;
+    _cs149_vstore_float(output+i, result, maskAll);
+  }
+
+  //if (N % VECTOR_WIDTH != 0) 
+  int start = N - N % VECTOR_WIDTH;
+  clampedExpSerial(values+start, exponents+start, output+start, N % VECTOR_WIDTH);
+
+  // for (int i = 0; i < N; ++i) {
+  //   output[indices[i]] = sortedValues[i];
+  // }
+
+  // delete[] sortedValues;
+  // delete[] sortedExponents;
 }
 
 // returns the sum of all elements in values
