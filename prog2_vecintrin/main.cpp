@@ -257,9 +257,9 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
   }
 
   // comment out this to compare SIMD utilization
-  // std::sort(indices.begin(), indices.end(), [&exponents](int i1, int i2) {
-  //   return exponents[i1] > exponents[i2];
-  // });
+  std::sort(indices.begin(), indices.end(), [&exponents](int i1, int i2) {
+    return exponents[i1] > exponents[i2];
+  });
 
   // Reorder the values and exponents according to the sorted indices
   float* sortedValues = new float[N];
