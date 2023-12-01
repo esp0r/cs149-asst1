@@ -250,22 +250,26 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
   // N and VECTOR_WIDTH, not just when VECTOR_WIDTH divides N
   //
 
-  // // Before the SIMD operations, sort the indices according to the exponents
-  // std::vector<int> indices(N);
-  // for (int i = 0; i < N; ++i) {
-  //   indices[i] = i;
-  // }
+  // Before the SIMD operations, sort the indices according to the exponents
+  std::vector<int> indices(N);
+  for (int i = 0; i < N; ++i) {
+    indices[i] = i;
+  }
+
+  // comment out this to compare SIMD utilization
   // std::sort(indices.begin(), indices.end(), [&exponents](int i1, int i2) {
   //   return exponents[i1] > exponents[i2];
   // });
-  // // Reorder the values and exponents according to the sorted indices
-  // float* sortedValues = new float[N];
-  // int* sortedExponents = new int[N];
 
-  // for (int i = 0; i < N; ++i) {
-  //     sortedValues[i] = values[indices[i]];
-  //     sortedExponents[i] = exponents[indices[i]];
-  // }
+  // Reorder the values and exponents according to the sorted indices
+  float* sortedValues = new float[N];
+  float* sortedOutput = new float[N];
+  int* sortedExponents = new int[N];
+
+  for (int i = 0; i < N; ++i) {
+      sortedValues[i] = values[indices[i]];
+      sortedExponents[i] = exponents[indices[i]];
+  }
 
   
   
@@ -282,8 +286,8 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
   for (int i=0; i+VECTOR_WIDTH<=N; i+=VECTOR_WIDTH){
     maskAll = _cs149_init_ones();
 
-    _cs149_vload_float(x, values+i, maskAll);
-    _cs149_vload_int(y, exponents+i, maskAll);
+    _cs149_vload_float(x, sortedValues+i, maskAll);
+    _cs149_vload_int(y, sortedExponents+i, maskAll);
 
     //if (y == 0)
     maskIsZero = _cs149_init_ones(0);
@@ -315,19 +319,20 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
     _cs149_vset_float(result, 9.999999f, maskMax);
 
     //output[i] = result;
-    _cs149_vstore_float(output+i, result, maskAll);
+    _cs149_vstore_float(sortedOutput+i, result, maskAll);
   }
 
   //if (N % VECTOR_WIDTH != 0) 
   int start = N - N % VECTOR_WIDTH;
-  clampedExpSerial(values+start, exponents+start, output+start, N % VECTOR_WIDTH);
+  clampedExpSerial(sortedValues+start, sortedExponents+start, sortedOutput+start, N % VECTOR_WIDTH);
 
-  // for (int i = 0; i < N; ++i) {
-  //   output[indices[i]] = sortedValues[i];
-  // }
+  for (int i = 0; i < N; ++i) {
+    output[indices[i]] = sortedOutput[i];
+  }
 
-  // delete[] sortedValues;
-  // delete[] sortedExponents;
+  delete[] sortedValues;
+  delete[] sortedOutput;
+  delete[] sortedExponents;
 }
 
 // returns the sum of all elements in values
