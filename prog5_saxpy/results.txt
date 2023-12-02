@@ -1,0 +1,13 @@
+[saxpy serial]:         [19.821] ms     [15.035] GB/s   [2.018] GFLOPS                                                      
+[saxpy ispc]:           [17.280] ms     [17.246] GB/s   [2.315] GFLOPS                                                      
+[saxpy task ispc]:      [1.515] ms      [196.762] GB/s  [26.409] GFLOPS                                                     
+[saxpy stream ispc]:    [1.400] ms      [212.948] GB/s  [28.581] GFLOPS                                                     
+                                (1.15x speedup from ISPC)
+                                (13.09x speedup from task ISPC)                                                             
+                                (14.16x speedup from task Stream ISPC)
+
+about 10% speedup from streaming
+
+mkl:
+[saxpy serial]:         [12.271] ms     [24.286] GB/s   [3.260] GFLOPS
+[saxpy MKL]:            [2.396] ms      [124.389] GB/s  [16.695] GFLOPS

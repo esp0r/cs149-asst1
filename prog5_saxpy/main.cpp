@@ -34,14 +34,17 @@ int main() {
     const unsigned int N = 20 * 1000 * 1000; // 20 M element vectors (~80 MB)
     const unsigned int TOTAL_BYTES = 4 * N * sizeof(float);
     const unsigned int TOTAL_FLOPS = 2 * N;
+    const int REPEAT = 3;
 
     float scale = 2.f;
 
-    float* arrayX = new float[N];
-    float* arrayY = new float[N];
-    float* resultSerial = new float[N];
-    float* resultISPC = new float[N];
-    float* resultTasks = new float[N];
+    // must use 64 byte aligned when using streaming stores
+    float* arrayX = (float *) aligned_alloc(64, N * sizeof(float));
+    float* arrayY = (float *) aligned_alloc(64, N * sizeof(float));
+    float* resultSerial = (float *) aligned_alloc(64, N * sizeof(float));
+    float* resultISPC = (float *) aligned_alloc(64, N * sizeof(float));
+    float* resultTasks = (float *) aligned_alloc(64, N * sizeof(float));
+    float* resultStream = (float *) aligned_alloc(64, N * sizeof(float));
 
     // initialize array values
     for (unsigned int i=0; i<N; i++)
@@ -51,6 +54,7 @@ int main() {
         resultSerial[i] = 0.f;
         resultISPC[i] = 0.f;
         resultTasks[i] = 0.f;
+        resultStream[i] = 0.f;
     }
 
     //
@@ -58,23 +62,23 @@ int main() {
     // timing.
     //
     double minSerial = 1e30;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < REPEAT; ++i) {
         double startTime =CycleTimer::currentSeconds();
         saxpySerial(N, scale, arrayX, arrayY, resultSerial);
         double endTime = CycleTimer::currentSeconds();
         minSerial = std::min(minSerial, endTime - startTime);
     }
 
-// printf("[saxpy serial]:\t\t[%.3f] ms\t[%.3f] GB/s\t[%.3f] GFLOPS\n",
-    //       minSerial * 1000,
-    //       toBW(TOTAL_BYTES, minSerial),
-    //       toGFLOPS(TOTAL_FLOPS, minSerial));
+    printf("[saxpy serial]:\t\t[%.3f] ms\t[%.3f] GB/s\t[%.3f] GFLOPS\n",
+            minSerial * 1000,
+            toBW(TOTAL_BYTES, minSerial),
+            toGFLOPS(TOTAL_FLOPS, minSerial));
 
     //
     // Run the ISPC (single core) implementation
     //
     double minISPC = 1e30;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < REPEAT; ++i) {
         double startTime = CycleTimer::currentSeconds();
         saxpy_ispc(N, scale, arrayX, arrayY, resultISPC);
         double endTime = CycleTimer::currentSeconds();
@@ -92,7 +96,7 @@ int main() {
     // Run the ISPC (multi-core) implementation
     //
     double minTaskISPC = 1e30;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < REPEAT; ++i) {
         double startTime = CycleTimer::currentSeconds();
         saxpy_ispc_withtasks(N, scale, arrayX, arrayY, resultTasks);
         double endTime = CycleTimer::currentSeconds();
@@ -105,16 +109,36 @@ int main() {
            minTaskISPC * 1000,
            toBW(TOTAL_BYTES, minTaskISPC),
            toGFLOPS(TOTAL_FLOPS, minTaskISPC));
+    
+    //
+    // Run the ISPC Stream (multi-core) implementation
+    //
+    double minStream = 1e30;
+    for (int i = 0; i < REPEAT; ++i) {
+        double startTime = CycleTimer::currentSeconds();
+        saxpy_ispc_withtasks_stream(N, scale, arrayX, arrayY, resultStream);
+        double endTime = CycleTimer::currentSeconds();
+        minStream = std::min(minStream, endTime - startTime);
+    }
 
-    printf("\t\t\t\t(%.2fx speedup from use of tasks)\n", minISPC/minTaskISPC);
-    //printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
-    //printf("\t\t\t\t(%.2fx speedup from task ISPC)\n", minSerial/minTaskISPC);
+    verifyResult(N, resultStream, resultSerial);
+
+    printf("[saxpy stream ispc]:\t[%.3f] ms\t[%.3f] GB/s\t[%.3f] GFLOPS\n",
+           minStream * 1000,
+           toBW(TOTAL_BYTES, minStream),
+           toGFLOPS(TOTAL_FLOPS, minStream));
+
+    // printf("\t\t\t\t(%.2fx speedup from use of tasks)\n", minISPC/minTaskISPC);
+    printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
+    printf("\t\t\t\t(%.2fx speedup from task ISPC)\n", minSerial/minTaskISPC);
+    printf("\t\t\t\t(%.2fx speedup from task Stream ISPC)\n", minSerial/minStream);
 
     delete[] arrayX;
     delete[] arrayY;
     delete[] resultSerial;
     delete[] resultISPC;
     delete[] resultTasks;
+    delete[] resultStream;
 
     return 0;
 }
