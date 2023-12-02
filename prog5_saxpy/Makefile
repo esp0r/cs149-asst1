@@ -3,6 +3,9 @@ CXXFLAGS=-I../common -Iobjs/ -O2 -Wall
 ISPC=ispc
 # note: requires AVX2
 ISPCFLAGS=-O3 --target=avx2-i32x8 --arch=x86-64 --pic
+# ISPCFLAGS=-O3 --target=avx2-i32x8 --arch=x86-64 --pic --opt=disable-fma 
+# ISPCFLAGS=-O3 --target=avx512skx-x64 --arch=x86-64 --pic 
+# ISPCFLAGS=-O3 --target=avx512skx-x64 --arch=x86-64 --pic --opt=disable-fma 
 
 APP_NAME=saxpy
 OBJDIR=objs
