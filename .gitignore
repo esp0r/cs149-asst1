@@ -7,3 +7,4 @@ prog1_mandelbrot_threads/mandelbrot
 prog2_vecintrin/myexp
 prog2_vecintrin/*.o
 prog3_mandelbrot_ispc/mandelbrot_ispc
+prog4_sqrt/sqrt
